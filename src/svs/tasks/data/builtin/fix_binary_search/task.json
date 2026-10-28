@@ -1,0 +1,7 @@
+{
+  "id": "fix_binary_search",
+  "title": "Fix binary search",
+  "prompt": "Fix src/search.py so binary_search(arr, target) returns the index or -1.",
+  "starter": "starter",
+  "hidden_tests": "hidden_tests"
+}

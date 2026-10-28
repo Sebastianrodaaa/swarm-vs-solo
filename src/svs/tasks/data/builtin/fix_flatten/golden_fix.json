@@ -1,0 +1,5 @@
+{
+  "files": {
+    "src/listops.py": "def flatten(nested):\n    out = []\n    for item in nested:\n        if isinstance(item, list):\n            out.extend(flatten(item))\n        else:\n            out.append(item)\n    return out\n"
+  }
+}

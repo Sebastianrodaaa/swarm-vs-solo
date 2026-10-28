@@ -1,0 +1,7 @@
+{
+  "id": "fix_balanced_parens",
+  "title": "Fix balanced parentheses",
+  "prompt": "Fix src/text.py so is_balanced(s) returns True when parentheses are balanced.",
+  "starter": "starter",
+  "hidden_tests": "hidden_tests"
+}

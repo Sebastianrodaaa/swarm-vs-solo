@@ -1,0 +1,7 @@
+{
+  "id": "fix_palindrome",
+  "title": "Fix palindrome check",
+  "prompt": "Fix src/text.py so is_palindrome(s) ignores case and non-alphanumeric characters.",
+  "starter": "starter",
+  "hidden_tests": "hidden_tests"
+}

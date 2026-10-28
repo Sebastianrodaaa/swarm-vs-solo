@@ -1,0 +1,7 @@
+{
+  "id": "fix_max_list",
+  "title": "Fix max in list",
+  "prompt": "Fix src/listops.py so max_in_list(values) returns the largest element.",
+  "starter": "starter",
+  "hidden_tests": "hidden_tests"
+}

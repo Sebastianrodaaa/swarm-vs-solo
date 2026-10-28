@@ -1,0 +1,5 @@
+{
+  "files": {
+    "src/text.py": "def word_count(text: str) -> int:\n    return len(text.split())\n"
+  }
+}

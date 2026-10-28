@@ -1,0 +1,7 @@
+{
+  "id": "fix_add",
+  "title": "Fix addition",
+  "prompt": "Fix src/mathops.py so add(a, b) returns the sum of a and b.",
+  "starter": "starter",
+  "hidden_tests": "hidden_tests"
+}

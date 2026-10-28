@@ -1,0 +1,2 @@
+{"instance_id": "example__repo-1", "repo": "example/repo", "base_commit": "abc123", "problem_statement": "Fix the failing unit test in module foo."}
+{"instance_id": "example__repo-2", "repo": "example/repo", "base_commit": "def456", "problem_statement": "Implement feature bar according to the spec in the issue."}

@@ -1,0 +1,7 @@
+{
+  "id": "fix_merge_sorted",
+  "title": "Fix merge sorted lists",
+  "prompt": "Fix src/listops.py so merge_sorted(a, b) merges two sorted lists into one sorted list.",
+  "starter": "starter",
+  "hidden_tests": "hidden_tests"
+}

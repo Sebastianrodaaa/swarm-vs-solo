@@ -1,0 +1,7 @@
+{
+  "id": "fix_fizzbuzz",
+  "title": "Fix fizzbuzz",
+  "prompt": "Fix src/fizzbuzz.py so fizzbuzz(n) returns the standard FizzBuzz sequence from 1..n.",
+  "starter": "starter",
+  "hidden_tests": "hidden_tests"
+}

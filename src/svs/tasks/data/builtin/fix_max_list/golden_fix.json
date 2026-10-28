@@ -1,0 +1,5 @@
+{
+  "files": {
+    "src/listops.py": "def max_in_list(values):\n    if not values:\n        raise ValueError('empty')\n    return max(values)\n"
+  }
+}

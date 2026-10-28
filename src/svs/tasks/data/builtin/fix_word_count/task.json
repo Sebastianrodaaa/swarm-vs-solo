@@ -1,0 +1,7 @@
+{
+  "id": "fix_word_count",
+  "title": "Fix word count",
+  "prompt": "Fix src/text.py so word_count(text) counts words separated by whitespace.",
+  "starter": "starter",
+  "hidden_tests": "hidden_tests"
+}
