@@ -30,19 +30,38 @@ def _write_cast(lines: list[tuple[float, str, str]]) -> None:
             handle.write(json.dumps([t, kind, text]) + "\n")
 
 
-def _write_gif_from_png(png_path: Path, gif_path: Path) -> None:
-    from PIL import Image
+def _write_gif_from_charts(chart_paths: list[Path], gif_path: Path) -> None:
+    from PIL import Image, ImageDraw
 
-    img = Image.open(png_path).convert("P", palette=Image.ADAPTIVE)
-    # Simple 3-frame pulse for demo preview
-    frames = [img]
-    for _ in range(2):
-        frames.append(img.copy())
-    frames[0].save(
+    frames: list[Image.Image] = []
+    target_size = (800, 460)
+    for chart in chart_paths:
+        if not chart.is_file():
+            continue
+        base = Image.open(chart).convert("RGBA")
+        base.thumbnail((800, 400), Image.Resampling.LANCZOS)
+        canvas = Image.new("RGBA", target_size, (15, 23, 42, 255))
+        ox = (target_size[0] - base.width) // 2
+        oy = 36 + (400 - base.height) // 2
+        canvas.paste(base, (ox, oy), base)
+        draw = ImageDraw.Draw(canvas)
+        title = chart.stem.replace("_", " ").title()
+        draw.text((24, 12), f"MOCK report — {title}", fill=(248, 250, 252))
+        draw.text(
+            (24, target_size[1] - 28),
+            "Deterministic mock adapter · not real agents",
+            fill=(148, 163, 184),
+        )
+        frames.append(canvas.convert("P", palette=Image.ADAPTIVE))
+
+    if not frames:
+        return
+    hold = frames + frames  # linger on each chart
+    hold[0].save(
         gif_path,
         save_all=True,
-        append_images=frames[1:],
-        duration=600,
+        append_images=hold[1:],
+        duration=1200,
         loop=0,
     )
 
@@ -101,9 +120,12 @@ def main() -> int:
     step([svs, "report", "--results", str(results), "--output", str(report_dir)])
 
     _write_cast(transcript)
-    png = report_dir / "pass_rate.png"
-    if png.is_file():
-        _write_gif_from_png(png, DEMO / "report-preview.gif")
+    charts = [
+        report_dir / "pass_rate.png",
+        report_dir / "mean_wall_time.png",
+        report_dir / "mean_cost.png",
+    ]
+    _write_gif_from_charts(charts, DEMO / "report-preview.gif")
     print("Wrote demo artifacts under", DEMO)
     return 0
 
