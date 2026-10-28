@@ -1,0 +1,5 @@
+{
+  "files": {
+    "src/text.py": "import re\n\ndef is_palindrome(s: str) -> bool:\n    cleaned = re.sub(r'[^a-z0-9]', '', s.lower())\n    return cleaned == cleaned[::-1]\n"
+  }
+}

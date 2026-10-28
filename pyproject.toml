@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "swarm-vs-solo"
+version = "0.1.0"
+description = "Benchmark harness: single coding agent vs AutoSwarm on the same tasks"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [{ name = "Sebastian Roda" }]
+keywords = ["benchmark", "agents", "autoswarm", "coding-agents"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+  "matplotlib>=3.7",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4",
+  "pytest-cov>=4.1",
+]
+
+[project.scripts]
+svs = "svs.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/svs"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/svs/tasks/data" = "svs/tasks/data"
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src/svs",
+  "/tasks",
+  "/docs",
+  "/tests",
+  "/README.md",
+  "/LICENSE",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

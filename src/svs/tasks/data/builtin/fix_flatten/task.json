@@ -1,0 +1,7 @@
+{
+  "id": "fix_flatten",
+  "title": "Fix list flatten",
+  "prompt": "Fix src/listops.py so flatten(nested) returns a flat list of integers.",
+  "starter": "starter",
+  "hidden_tests": "hidden_tests"
+}

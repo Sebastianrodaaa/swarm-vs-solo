@@ -1,0 +1,13 @@
+{"version": 2, "width": 100, "height": 26, "timestamp": 1793194077}
+[0.4, "i", "/usr/bin/python3 -m pip install -e . -q\n"]
+[0.8, "i", "/home/ubuntu/.local/bin/svs run --tasks builtin --mode solo --agent mock --limit 4 --results /workspace/docs/demo/mock-runs.jsonl\n"]
+[1.2000000000000002, "o", "Running 4 task(s) mode=solo agent=mock -> /workspace/docs/demo/mock-runs.jsonl\r\n"]
+[1.6, "o", "Done: 4/4 passed\r\n"]
+[2.0, "i", "/home/ubuntu/.local/bin/svs run --tasks builtin --mode swarm --agent mock --limit 4 --results /workspace/docs/demo/mock-runs.jsonl\n"]
+[2.4, "o", "Running 4 task(s) mode=swarm agent=mock -> /workspace/docs/demo/mock-runs.jsonl\r\n"]
+[2.8, "o", "Done: 4/4 passed\r\n"]
+[3.1999999999999997, "i", "/home/ubuntu/.local/bin/svs report --results /workspace/docs/demo/mock-runs.jsonl --output /workspace/docs/demo/report\n"]
+[3.5999999999999996, "o", "Wrote /workspace/docs/demo/report/report.md\r\n"]
+[3.9999999999999996, "o", "Wrote /workspace/docs/demo/report/pass_rate.png\r\n"]
+[4.3999999999999995, "o", "Wrote /workspace/docs/demo/report/mean_wall_time.png\r\n"]
+[4.8, "o", "Wrote /workspace/docs/demo/report/mean_cost.png\r\n"]

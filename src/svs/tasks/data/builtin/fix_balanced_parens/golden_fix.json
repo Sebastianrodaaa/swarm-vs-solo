@@ -1,0 +1,5 @@
+{
+  "files": {
+    "src/text.py": "def is_balanced(s: str) -> bool:\n    depth = 0\n    for ch in s:\n        if ch == '(':\n            depth += 1\n        elif ch == ')':\n            depth -= 1\n            if depth < 0:\n                return False\n    return depth == 0\n"
+  }
+}

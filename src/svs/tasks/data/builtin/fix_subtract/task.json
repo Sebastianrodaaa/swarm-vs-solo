@@ -1,0 +1,7 @@
+{
+  "id": "fix_subtract",
+  "title": "Fix subtraction",
+  "prompt": "Fix src/mathops.py so subtract(a, b) returns a - b.",
+  "starter": "starter",
+  "hidden_tests": "hidden_tests"
+}
