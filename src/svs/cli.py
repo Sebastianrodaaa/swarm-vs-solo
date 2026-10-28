@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from svs import __version__
-from svs.models import Mode
+from svs.models import HarnessKind, Mode
 from svs.report import generate_report
 from svs.results import default_results_path
 from svs.runner import run_suite
@@ -41,6 +41,24 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--ids", nargs="*", help="Optional subset of task ids")
     run_p.add_argument("--timeout", type=int, default=600, help="Per-task timeout seconds")
     run_p.add_argument("--limit", type=int, default=None, help="Limit tasks (JSONL suites)")
+    run_p.add_argument(
+        "--harness",
+        choices=["fixed", "coevolve"],
+        default="fixed",
+        help="Harness arm: fixed static prompt/tools/rubric, or co-evolve after train batches",
+    )
+    run_p.add_argument(
+        "--batch-size",
+        type=int,
+        default=2,
+        help="Train tasks per batch when --harness coevolve (default: 2)",
+    )
+    run_p.add_argument(
+        "--run-dir",
+        type=Path,
+        default=None,
+        help="Directory for versioned harness revisions (coevolve arm)",
+    )
 
     rep_p = sub.add_parser("report", help="Aggregate JSONL results into markdown + PNG charts")
     rep_p.add_argument(
@@ -88,16 +106,29 @@ def _cmd_run(args: argparse.Namespace) -> int:
 
     tasks = filter_tasks(tasks, args.ids)
     mode: Mode = args.mode
-    print(f"Running {len(tasks)} task(s) mode={mode} agent={args.agent} -> {results_path}")
+    harness: HarnessKind = args.harness
+    print(
+        f"Running {len(tasks)} task(s) mode={mode} agent={args.agent} "
+        f"harness={harness} -> {results_path}"
+    )
     records = run_suite(
         tasks,
         mode=mode,
         agent=args.agent,
         results_path=results_path,
         timeout=args.timeout,
+        harness_kind=harness,
+        batch_size=args.batch_size,
+        run_dir=args.run_dir,
     )
     passed = sum(1 for r in records if r.passed)
     print(f"Done: {passed}/{len(records)} passed")
+    if harness == "coevolve":
+        eval_records = [r for r in records if r.split == "eval"]
+        if eval_records:
+            eval_passed = sum(1 for r in eval_records if r.passed)
+            print(f"Held-out eval: {eval_passed}/{len(eval_records)} passed")
+            return 0 if eval_passed == len(eval_records) else 2
     return 0 if passed == len(records) else 2
 
 

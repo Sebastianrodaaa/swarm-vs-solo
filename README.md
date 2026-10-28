@@ -2,7 +2,7 @@
 
 <img src="docs/assets/logo.svg" alt="swarm-vs-solo logo" width="640">
 
-**Measure whether a swarm of coding agents beats one agent on the same tasks.**
+**Measure whether a swarm of coding agents beats one agent on the same tasks — and whether the harness should co-evolve with policy.**
 
 <br>
 
@@ -11,7 +11,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![AutoSwarm](https://img.shields.io/badge/orchestration-AutoSwarm-8b5cf6)](https://github.com/HKUDS/AutoSwarm)
 
-[Quickstart](#quickstart) · [Demo](#demo) · [Usage](#usage) · [Architecture](#architecture) · [Results (MOCK)](#results-mock-example-data) · [Contributing](#contributing)
+[Quickstart](#quickstart) · [Demo](#demo) · [Usage](#usage) · [Harness experiment](#harness-experiment-fixed-vs-co-evolve) · [Architecture](#architecture) · [Results (MOCK)](#results-mock-example-data) · [Contributing](#contributing)
 
 </div>
 
@@ -28,15 +28,17 @@
 
 You get **pass rate**, **wall-clock time**, and **token/cost** in JSONL, plus `svs report` for markdown tables and charts.
 
+A second experiment axis compares a **fixed harness** (static prompt, tools, rubric) with a **co-evolving harness** inspired by recent work on training policy and scaffolding together ([CoHARL](https://arxiv.org/abs/2610.36469v1), [co-evolving rubrics](https://arxiv.org/abs/2610.36826v1), [*Your Policy Is Secretly a Harness*](https://huggingface.co/papers/2610.37255)).
+
 ## Demo
 
 <p align="center">
-  <img src="docs/demo/report-preview.gif" alt="MOCK demo: svs report charts cycling (pass rate, wall time, cost)" width="820">
+  <img src="docs/demo/report-preview.gif" alt="MOCK demo: svs report charts including harness arms" width="820">
 </p>
 
 <p align="center">
   <sub>
-    <strong>MOCK example data</strong> — charts from the committed <code>mock</code> adapter run.
+    <strong>MOCK example data</strong> — charts from the committed <code>mock</code> adapter run (solo, swarm, fixed harness, co-evolve harness).
     Terminal recording: <a href="docs/demo/swarm-vs-solo-mock.cast">docs/demo/swarm-vs-solo-mock.cast</a>
     (play with <a href="https://asciinema.org/">asciinema</a>).
   </sub>
@@ -50,12 +52,14 @@ cd swarm-vs-solo
 python3 -m pip install -e ".[dev]"
 
 # No API keys — deterministic mock adapter
-svs run --tasks builtin --mode solo  --agent mock --results results/runs.jsonl
+svs run --tasks builtin --mode solo  --agent mock --harness fixed --results results/runs.jsonl
 svs run --tasks builtin --mode swarm --agent mock --results results/runs.jsonl
+svs run --tasks builtin --mode solo  --agent mock --harness coevolve --batch-size 2 \
+  --run-dir results/coevolve-run --results results/runs.jsonl
 svs report --results results/runs.jsonl --output results/report
 ```
 
-Open `results/report/report.md` and the PNG charts in that folder.
+Open `results/report/report.md`, PNG charts, and (for co-evolve) `results/coevolve-run/harness/rev_*.json`.
 
 ## Usage
 
@@ -70,6 +74,9 @@ svs run --tasks <suite> --mode solo|swarm --agent <name> [options]
 | `--tasks` | `builtin`, a directory of task folders, or a SWE-bench-Lite-style `.jsonl` |
 | `--mode` | `solo` = direct CLI adapter · `swarm` = AutoSwarm (or mock swarm simulation) |
 | `--agent` | `mock`, `claude`, `codex`, `grok`, `cursor` |
+| `--harness` | `fixed` (default) or `coevolve` — see [Harness experiment](#harness-experiment-fixed-vs-co-evolve) |
+| `--batch-size` | Train tasks per batch when `--harness coevolve` (default: 2) |
+| `--run-dir` | Store versioned harness JSON revisions (recommended for co-evolve) |
 | `--results` | JSONL output path (default: `results/runs.jsonl`) |
 | `--ids` | Run only these task ids |
 | `--limit` | Cap number of tasks (useful for JSONL suites) |
@@ -81,13 +88,17 @@ svs run --tasks <suite> --mode solo|swarm --agent <name> [options]
 svs report [--results PATH] [--output DIR]
 ```
 
-Aggregates JSONL by `(agent, mode)` and writes `report.md` plus PNG charts.
+Aggregates JSONL by `(agent, mode, harness)` and writes `report.md` plus PNG charts. When co-evolve rows are present, adds harness batch curves, revision counts, and held-out eval cost/time.
 
 ### Examples
 
 ```bash
 # Subset of built-in tasks
 svs run --tasks builtin --mode solo --agent mock --ids fix_add fix_fizzbuzz
+
+# Compare harness arms on mock (MOCK data)
+svs run --tasks builtin --mode solo --agent mock --harness fixed --limit 8 --results results/runs.jsonl
+svs run --tasks builtin --mode solo --agent mock --harness coevolve --limit 8 --run-dir results/coevolve-run --results results/runs.jsonl
 
 # SWE-bench-Lite-style manifest (placeholder workspaces)
 svs run --tasks tasks/swebench-sample.jsonl --mode solo --agent mock --limit 2
@@ -97,9 +108,22 @@ svs run --tasks builtin --mode solo --agent claude --limit 1
 svs run --tasks builtin --mode swarm --agent claude --limit 1   # uses autoswarm CLI
 ```
 
+## Harness experiment (fixed vs co-evolve)
+
+| Arm | What stays constant | What changes |
+| --- | --- | --- |
+| **fixed** | System prompt, tool list, grading rubric | Nothing — baseline scaffolding |
+| **coevolve** | Task split + batch schedule | After each **train** batch, a harness updater rewrites prompt, tools, and rubric from failures; each revision is saved under `--run-dir/harness/rev_NNN.json` |
+
+**Leakage guard:** tasks are split ~70% train / ~30% eval (hash of `task_id`). The updater sees **train failures only**. Eval tasks run once at the end; `svs report` highlights **held-out eval** metrics for harness comparisons.
+
+Works with all adapters (`mock`, `claude`, `codex`, `grok`, `cursor`). The mock adapter drives the full co-evolve loop deterministically in CI.
+
+Design notes and threats to validity: [`docs/REPORT.md`](docs/REPORT.md#harness-experiment-fixed-vs-co-evolve).
+
 ## Architecture
 
-Each task is a folder with `task.json`, `starter/` (buggy workspace), and `hidden_tests/` (pytest, never shown to the agent during the run). Every run copies `starter/` into an isolated **git worktree**, invokes the adapter, then evaluates by copying hidden tests into a temp directory.
+Each task is a folder with `task.json`, `starter/` (buggy workspace), and `hidden_tests/` (pytest, never shown to the agent during the run). Every run copies `starter/` into an isolated **git worktree**, invokes the adapter with the active harness, then evaluates by copying hidden tests into a temp directory.
 
 ```mermaid
 flowchart LR
@@ -110,6 +134,7 @@ flowchart LR
   subgraph Core
     LD[Task loader]
     WT[Git worktree]
+    H[Harness fixed/coevolve]
     EV[Hidden pytest]
     RS[JSONL results]
   end
@@ -119,9 +144,9 @@ flowchart LR
     AS[AutoSwarm CLI]
   end
   RUN --> LD --> WT
-  WT --> M
-  WT --> C
-  WT --> AS
+  WT --> H --> M
+  H --> C
+  H --> AS
   WT --> EV --> RS
   REP --> RS
 ```
@@ -129,10 +154,11 @@ flowchart LR
 | Component | Role |
 | --- | --- |
 | **Task loader** | Built-in suite under `src/svs/tasks/data/builtin/` or external JSONL |
+| **Harness** | Versioned prompt, tools, rubric; co-evolve updater between train batches |
 | **Worktree** | Fresh git snapshot per run — no cross-task leakage |
 | **Adapters** | Pluggable CLI backends; swarm mode wraps `autoswarm run` |
 | **Evaluate** | Hidden pytest with `PYTHONPATH` including `workspace/src` |
-| **Report** | Pass rate, mean wall time, mean cost — solo vs swarm |
+| **Report** | Solo vs swarm + harness arm charts (eval split for co-evolve) |
 
 ## Built-in tasks
 
@@ -150,7 +176,7 @@ src/svs/tasks/data/builtin/<task-id>/
 
 | Agent | Solo | Swarm | What you need |
 | --- | :---: | :---: | --- |
-| `mock` | yes | simulated | Nothing — used in CI |
+| `mock` | yes | simulated | Nothing — used in CI (incl. co-evolve loop) |
 | `claude` | yes | AutoSwarm child | `claude` CLI + auth |
 | `codex` | yes | AutoSwarm child | `codex` CLI + auth |
 | `grok` | yes | AutoSwarm child | `grok` CLI + auth |
@@ -189,14 +215,11 @@ The table below is copied from the **committed demo run** ([`docs/demo/report/re
 > python3 docs/demo/generate_demo_artifacts.py
 > ```
 
-| Agent | Mode | Runs | Pass rate | Mean wall (s) | Mean cost ($) |
-| --- | --- | ---: | ---: | ---: | ---: |
-| mock | solo | 4 | 100.0% | 0.181 | 0.009371 |
-| mock | swarm | 4 | 100.0% | 0.346 | 0.015760 |
+See the committed report for the full `(agent, mode, harness)` table and harness charts (`harness_pass_rate_by_batch.png`, `harness_revision_count.png`, `harness_eval_cost_time.png`).
 
 <p align="center">
-  <img src="docs/demo/report/pass_rate.png" alt="MOCK pass rate chart" width="400">
-  <img src="docs/demo/report/mean_wall_time.png" alt="MOCK mean wall time chart" width="400">
+  <img src="docs/demo/report/pass_rate.png" alt="MOCK pass rate chart" width="380">
+  <img src="docs/demo/report/harness_pass_rate_by_batch.png" alt="MOCK harness pass rate by batch" width="380">
 </p>
 
 For methodology, metrics definitions, and threats to validity, see [`docs/REPORT.md`](docs/REPORT.md).
@@ -208,11 +231,11 @@ pip install -e ".[dev]"
 pytest
 ```
 
-CI (`.github/workflows/ci.yml`) runs mock `svs run` + `svs report` on Python **3.10** and **3.12**, then pytest.
+CI (`.github/workflows/ci.yml`) runs mock `svs run` (solo, swarm, fixed + co-evolve harness) + `svs report` on Python **3.10** and **3.12**, then pytest.
 
 ## Contributing
 
-Contributions welcome — especially new **task fixtures**, **adapter improvements**, and **fairer swarm baselines**.
+Contributions welcome — especially new **task fixtures**, **adapter improvements**, **harness updaters**, and **fairer swarm baselines**.
 
 1. Fork the repo and create a branch from `main`.
 2. Install dev dependencies and run `pytest`.

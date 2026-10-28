@@ -1,0 +1,23 @@
+{
+  "policy": {
+    "arm": "coevolve",
+    "authorized_repairs": [
+      "fix_add",
+      "fix_balanced_parens"
+    ],
+    "filename_hints": [
+      "src/mathops.py",
+      "src/text.py"
+    ],
+    "generalize_src_repair": true
+  },
+  "revision": 1,
+  "rubric": "Pass if hidden pytest succeeds: agent completed without timeout and all tests green. When the task references a file path seen in prior train failures (src/mathops.py, src/text.py), ensure that module is corrected before finishing.",
+  "system_prompt": "You are a coding agent. Edit files in the workspace to satisfy the task. Prefer minimal, correct fixes.\n\nLessons from prior train batch (revision 1):\n- Task fix_add failed: prioritize edits under src/mathops.py\n- Task fix_balanced_parens failed: prioritize edits under src/text.py",
+  "tools": [
+    "read_file",
+    "write_file",
+    "run_shell",
+    "apply_structured_repair"
+  ]
+}

@@ -4,13 +4,21 @@ from pathlib import Path
 
 from svs.adapters._cli_runner import run_subprocess_agent
 from svs.adapters.base import AgentAdapter
+from svs.harness import HarnessConfig
 from svs.models import AgentRunResult, TaskSpec
 
 
 class CodexAdapter(AgentAdapter):
     name = "codex"
 
-    def run(self, workspace: Path, task: TaskSpec, *, timeout: int = 600) -> AgentRunResult:
+    def run(
+        self,
+        workspace: Path,
+        task: TaskSpec,
+        *,
+        timeout: int = 600,
+        harness: HarnessConfig | None = None,
+    ) -> AgentRunResult:
         # Codex app-server is JSON-RPC; benchmark uses one-shot CLI wrapper when available.
         command = ["codex", "exec", "--full-auto", task.prompt]
         result = run_subprocess_agent(

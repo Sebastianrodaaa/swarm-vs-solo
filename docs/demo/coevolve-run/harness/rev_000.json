@@ -1,0 +1,15 @@
+{
+  "policy": {
+    "arm": "coevolve",
+    "authorized_repairs": [],
+    "filename_hints": []
+  },
+  "revision": 0,
+  "rubric": "Pass if hidden pytest succeeds: agent completed without timeout and all tests green.",
+  "system_prompt": "You are a coding agent. Edit files in the workspace to satisfy the task. Prefer minimal, correct fixes.",
+  "tools": [
+    "read_file",
+    "write_file",
+    "run_shell"
+  ]
+}

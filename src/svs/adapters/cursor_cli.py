@@ -4,13 +4,21 @@ from pathlib import Path
 
 from svs.adapters._cli_runner import run_subprocess_agent
 from svs.adapters.base import AgentAdapter
+from svs.harness import HarnessConfig
 from svs.models import AgentRunResult, TaskSpec
 
 
 class CursorCliAdapter(AgentAdapter):
     name = "cursor"
 
-    def run(self, workspace: Path, task: TaskSpec, *, timeout: int = 600) -> AgentRunResult:
+    def run(
+        self,
+        workspace: Path,
+        task: TaskSpec,
+        *,
+        timeout: int = 600,
+        harness: HarnessConfig | None = None,
+    ) -> AgentRunResult:
         command = ["cursor-agent", "-p", task.prompt, "--output-format", "json"]
         result = run_subprocess_agent(
             command=command,

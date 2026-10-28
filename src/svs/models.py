@@ -6,6 +6,8 @@ from typing import Any, Literal
 
 
 Mode = Literal["solo", "swarm"]
+HarnessKind = Literal["fixed", "coevolve"]
+SplitKind = Literal["train", "eval"]
 
 
 @dataclass(frozen=True)
@@ -57,6 +59,10 @@ class RunRecord:
     cost_usd: float
     workspace: str
     error: str | None = None
+    harness: HarnessKind = "fixed"
+    harness_revision: int = 0
+    split: SplitKind = "train"
+    batch_index: int = 0
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_json(self) -> dict[str, Any]:

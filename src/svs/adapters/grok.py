@@ -4,13 +4,21 @@ from pathlib import Path
 
 from svs.adapters._cli_runner import run_subprocess_agent
 from svs.adapters.base import AgentAdapter
+from svs.harness import HarnessConfig
 from svs.models import AgentRunResult, TaskSpec
 
 
 class GrokCliAdapter(AgentAdapter):
     name = "grok"
 
-    def run(self, workspace: Path, task: TaskSpec, *, timeout: int = 600) -> AgentRunResult:
+    def run(
+        self,
+        workspace: Path,
+        task: TaskSpec,
+        *,
+        timeout: int = 600,
+        harness: HarnessConfig | None = None,
+    ) -> AgentRunResult:
         command = ["grok", "agent", "--no-leader", "stdio"]
         # grok reads prompt from stdin in stdio mode
         result = run_subprocess_agent(
