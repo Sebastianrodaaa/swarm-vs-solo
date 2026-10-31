@@ -10,7 +10,9 @@ Use this document when publishing results from `svs report`. Replace bracketed s
 | Task suite | [builtin / SWE-bench-Lite JSONL path] |
 | Agents compared | [e.g. mock, claude, codex] |
 | Modes | solo vs swarm (AutoSwarm `autoswarm run`) |
+| Harness arms | [fixed / coevolve] |
 | Results file | [path to runs.jsonl] |
+| Harness run dir | [path to coevolve revisions, if applicable] |
 
 > If any row used the `mock` adapter, label the entire table **MOCK example data** and do not compare to live agents.
 
@@ -36,7 +38,26 @@ Each task run copies the task `starter/` snapshot into a fresh Git repository an
 
 ### Reporting
 
-`svs report` aggregates `runs.jsonl` by `(agent, mode)` and writes `report.md` plus PNG charts for pass rate, mean wall time, and mean cost.
+`svs report` aggregates `runs.jsonl` by `(agent, mode, harness)` and writes `report.md` plus PNG charts for pass rate, mean wall time, and mean cost. When the co-evolve arm is present, additional charts cover pass rate by batch, harness revision counts, and held-out eval cost/time.
+
+## Harness experiment (fixed vs co-evolve)
+
+Recent work argues that **policy and harness should be co-trained or co-evolved** rather than treating prompts, tools, and rubrics as frozen scaffolding ([CoHARL](https://arxiv.org/abs/2610.36469v1), [co-evolving rubrics and harnesses](https://arxiv.org/abs/2610.36826v1), [*Your Policy Is Secretly a Harness*](https://huggingface.co/papers/2610.37255)). `svs` adds a second axis alongside solo vs swarm:
+
+| Arm | CLI | Behavior |
+| --- | --- | --- |
+| **fixed** | `--harness fixed` (default) | Static system prompt, tool list, and grading rubric for every task. |
+| **coevolve** | `--harness coevolve` | Tasks are split into **train** (~70%) and **held-out eval** (~30%) via a deterministic hash of `task_id`. Train tasks run in batches (`--batch-size`, default 2). After each train batch, a **harness updater** rewrites prompt, tools, and rubric using **train failures only**, then saves `run_dir/harness/rev_NNN.json` so every revision is diffable. Eval tasks run once at the end under the final harness; they never feed the updater. |
+
+### Leakage controls
+
+1. **Split discipline** — Updater input is restricted to failed records with `split=train`. Eval task ids and eval failures are excluded from update logic.
+2. **Reporting** — Harness comparison tables and `harness_eval_cost_time.png` use the **held-out eval split** when co-evolve rows exist, so headline pass rates are not train-contaminated.
+3. **Artifacts** — Versioned harness JSON under `--run-dir` documents exactly what changed between batches (prompt diff, tools added, rubric edits, policy flags).
+
+### Mock adapter (CI)
+
+The deterministic `mock` adapter simulates co-evolution without vendor APIs: early revisions withhold golden fixes until train-batch updates authorize repairs and generalize `src/` edits. This exercises batching, revision persistence, eval scoring, and reporting in CI.
 
 ## Results
 
@@ -56,12 +77,15 @@ Each task run copies the task `starter/` snapshot into a fresh Git repository an
 4. **Non-determinism** — Live LLM agents vary run-to-run; report confidence intervals or repeat runs when publishing.
 5. **Cost model** — When usage metadata is missing, cost may be zero or estimated from generic token rates.
 6. **Environment** — OS, model version, and API latency strongly affect wall time; pin versions in the table above.
+7. **Harness updater fidelity** — The bundled updater is deterministic and lightweight (not an LLM). Live co-evolve experiments should replace it with your training loop while keeping the same JSON schema and leakage guards.
+8. **Held-out size** — Small suites yield few eval tasks; pass rates on eval have high variance. Prefer full suites or repeated runs for publication.
 
 ## Reproduction
 
 ```bash
 pip install -e ".[dev]"
-svs run --tasks builtin --mode solo --agent mock --results results/runs.jsonl
+svs run --tasks builtin --mode solo --agent mock --harness fixed --results results/runs.jsonl
+svs run --tasks builtin --mode solo --agent mock --harness coevolve --batch-size 2 --run-dir results/coevolve-run --results results/runs.jsonl
 svs run --tasks builtin --mode swarm --agent mock --results results/runs.jsonl
 svs report --results results/runs.jsonl --output results/report
 ```

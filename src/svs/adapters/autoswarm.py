@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 
 from svs.adapters.base import AgentAdapter
+from svs.harness import HarnessConfig
 from svs.models import AgentRunResult, TaskSpec
 
 
@@ -19,7 +20,14 @@ class AutoSwarmAdapter(AgentAdapter):
         self.child_agent = child_agent
         self.mode = mode
 
-    def run(self, workspace: Path, task: TaskSpec, *, timeout: int = 600) -> AgentRunResult:
+    def run(
+        self,
+        workspace: Path,
+        task: TaskSpec,
+        *,
+        timeout: int = 600,
+        harness: HarnessConfig | None = None,
+    ) -> AgentRunResult:
         start = time.perf_counter()
         binary = shutil.which("autoswarm")
         if binary is None:

@@ -76,18 +76,19 @@ def main() -> int:
 
     transcript: list[tuple[str, str]] = []
     py = sys.executable
-    svs = shutil.which("svs") or str(ROOT / ".venv/bin/svs")
+    svs_bin = shutil.which("svs")
+    svs_prefix = [svs_bin] if svs_bin else [py, "-m", "svs.cli"]
 
-    def step(cmd: list[str]) -> None:
+    def step(args: list[str]) -> None:
+        cmd = svs_prefix + args
         out = _run(cmd, ROOT)
         transcript.append(("i", " ".join(cmd) + "\n"))
         for line in out.splitlines():
             transcript.append(("o", line + "\r\n"))
 
-    step([py, "-m", "pip", "install", "-e", ".", "-q"])
+    _run([py, "-m", "pip", "install", "-e", ".", "-q"], ROOT)
     step(
         [
-            svs,
             "run",
             "--tasks",
             "builtin",
@@ -103,7 +104,6 @@ def main() -> int:
     )
     step(
         [
-            svs,
             "run",
             "--tasks",
             "builtin",
@@ -117,13 +117,54 @@ def main() -> int:
             str(results),
         ]
     )
-    step([svs, "report", "--results", str(results), "--output", str(report_dir)])
+    step(
+        [
+            "run",
+            "--tasks",
+            "builtin",
+            "--mode",
+            "solo",
+            "--agent",
+            "mock",
+            "--limit",
+            "6",
+            "--harness",
+            "fixed",
+            "--results",
+            str(results),
+        ]
+    )
+    step(
+        [
+            "run",
+            "--tasks",
+            "builtin",
+            "--mode",
+            "solo",
+            "--agent",
+            "mock",
+            "--limit",
+            "6",
+            "--harness",
+            "coevolve",
+            "--batch-size",
+            "2",
+            "--run-dir",
+            str(DEMO / "coevolve-run"),
+            "--results",
+            str(results),
+        ]
+    )
+    step(["report", "--results", str(results), "--output", str(report_dir)])
 
     _write_cast(transcript)
     charts = [
         report_dir / "pass_rate.png",
         report_dir / "mean_wall_time.png",
         report_dir / "mean_cost.png",
+        report_dir / "harness_pass_rate_by_batch.png",
+        report_dir / "harness_revision_count.png",
+        report_dir / "harness_eval_cost_time.png",
     ]
     _write_gif_from_charts(charts, DEMO / "report-preview.gif")
     print("Wrote demo artifacts under", DEMO)

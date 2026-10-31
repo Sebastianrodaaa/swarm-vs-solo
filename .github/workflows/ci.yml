@@ -25,6 +25,10 @@ jobs:
         run: svs run --tasks builtin --mode solo --agent mock --limit 5 --results results/runs.jsonl
       - name: Run mock benchmark (swarm)
         run: svs run --tasks builtin --mode swarm --agent mock --limit 5 --results results/runs.jsonl
+      - name: Run mock harness arms (fixed + coevolve)
+        run: |
+          svs run --tasks builtin --mode solo --agent mock --limit 6 --harness fixed --results results/runs.jsonl
+          svs run --tasks builtin --mode solo --agent mock --limit 6 --harness coevolve --batch-size 2 --run-dir results/coevolve-run --results results/runs.jsonl
       - name: Generate report
         run: svs report --results results/runs.jsonl --output results/report
       - name: Pytest
